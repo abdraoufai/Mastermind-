@@ -1,74 +1,88 @@
-
 #include <stdio.h>
-
 #include <stdlib.h>
+#include <time.h>
 
-#include <string.h>
+const int NUM_PAWNS    = 5; 
+const int NUM_COLORS   = 8; 
+const int NUM_ATTEMPTS = 10;
 
-int compare(const void *a, const void *b) {
+enum color_t { RED, GREEN, BLUE, YELLOW, BLACK, WHITE, GRAY, PURPLE }; 
 
-    return (*(char *)a - *(char *)b);
+typedef enum color_t board[NUM_PAWNS];
 
+void generate_hidden_combination(enum color_t hidden_combination[]) {
+    srand(time(NULL));
+    for (int i = 0; i < NUM_PAWNS; ++i) {
+        hidden_combination[i] = rand() % NUM_COLORS;
+    }
 }
 
-
-
-
-void printSubsets(char *arr, int n, int r) {
-
-    char data[r + 1];
-
-    data[r] = '\0';
-
-
-    void combinationUtil(char *arr, int n, int r, int index, int data_index, char *data) {
-
-        if (data_index == r) {
-
-            printf("%s\n", data);
-
-            return;
-
+void read_proposed_combination(enum color_t board[]) {
+    printf("Enter your proposed combination (0-7 for colors):\n");
+    for (int i = 0; i < NUM_PAWNS; ++i) {
+        printf("Pawn %d: ", i + 1);
+        scanf("%d", &board[i]);
+    }
+}
+void evaluate_proposed_combination(
+    enum color_t hidden_combination[], 
+    enum color_t proposed_combination[], 
+    int *num_well_placed_pawns, 
+    int *num_misplaced_pawns) {
+    
+    *num_well_placed_pawns = 0;
+    *num_misplaced_pawns = 0;
+    
+    for (int i = 0; i < NUM_PAWNS; ++i) {
+        if (proposed_combination[i] == hidden_combination[i]) {
+            (*num_well_placed_pawns)++;
         }
-
-
-        for (int i = index; i < n && n - i >= r - data_index; i++) {
-
-            data[data_index] = arr[i];
-
-            combinationUtil(arr, n, r, i + 1, data_index + 1, data);
-
-        }
-
     }
 
-
-    combinationUtil(arr, n, r, 0, 0, data);
-
+    for (int i = 0; i < NUM_PAWNS; ++i) {
+        for (int j = 0; j < NUM_PAWNS; ++j) {
+            if (i != j && proposed_combination[i] == hidden_combination[j]) {
+                (*num_misplaced_pawns)++;
+            }
+        }
+    }
 }
 
+void game() {
+    enum color_t hidden_combination[NUM_PAWNS];
+    enum color_t proposed_combination[NUM_PAWNS];
+    int num_well_placed_pawns, num_misplaced_pawns;
+    
+    generate_hidden_combination(hidden_combination);
+
+    for (int attempt = 1; attempt <= NUM_ATTEMPTS; ++attempt) {
+        read_proposed_combination(proposed_combination);
+
+        evaluate_proposed_combination(
+            hidden_combination, 
+            proposed_combination, 
+            &num_well_placed_pawns, 
+            &num_misplaced_pawns
+        );
+
+        printf("Attempt %d: Well-placed pawns: %d, Misplaced pawns: %d\n",
+               attempt, num_well_placed_pawns, num_misplaced_pawns);
+
+        if (num_well_placed_pawns == NUM_PAWNS) {
+            printf("Congratulations! You guessed the hidden combination.\n");
+            break;
+        }
+    }
+
+    printf("Game over. The hidden combination was:");
+    for (int i = 0; i < NUM_PAWNS; ++i) {
+        printf(" %d", hidden_combination[i]);
+    }
+    printf("\n");
+}
 
 int main() {
-
-    char drawn_letters[] = "abcdefghij";
-
-    int length = strlen(drawn_letters);
-
-
-
-    qsort(drawn_letters, length, sizeof(char), compare);
-
-    for (int r = length; r >= 2; r--) {
-
-        printf("Subsets of length %d:\n", r);
-
-        printSubsets(drawn_letters, length, r);
-
-        printf("\n");
-
-    }
-
-
+    game();
     return 0;
-
 }
+
